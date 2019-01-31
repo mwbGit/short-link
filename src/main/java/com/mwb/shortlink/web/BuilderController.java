@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,13 +34,18 @@ public class BuilderController {
     @RequestMapping("l/generate")
     @ResponseBody
     public Map<String, Object> generate(@RequestParam String link) {
-        long id = redisService.incrBy(ID, 10);
+        Map<String, Object> result = new HashMap<>();
+        if (StringUtils.isEmpty(link)) {
+            result.put("code", 400);
+            result.put("message", "参数错误");
+            return result;
+        }
 
+        long id = redisService.incrBy(ID, 10);
         String shortLink = domain + Long.toString(id, 16);
         redisService.setex(LINKS + id, 3600 * 24 * 7, link);
         log.warn("generate link success, {} to {}", link, shortLink);
 
-        Map<String, Object> result = new HashMap<>();
         result.put("link", shortLink);
         result.put("code", 200);
         result.put("message", "成功");
